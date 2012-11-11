@@ -76,6 +76,7 @@ To use `TaskEngine` application must implement these interfaces:
  * `TaskStageProcessor` - business logic implementation for each "dynamic" task stage
  * `TaskProcessorProvider` - must return processors by string identifiers (got from tasks instances)
 
+Usage example:
 
     // engine creation
     TaskEngine taskEngine = TaskEngine(executor, taskManager, processorProvider);
@@ -89,9 +90,8 @@ To use `TaskEngine` application must implement these interfaces:
     // task suspension
     taskEngine.suspend(long taskId);
 
-_Note: you may find example implementations of these interfaces in project tests for **TODO**
-[spring-jdbc]()
-and for [hibernate]()_
+_Note: you may find example implementations of these interfaces for spring-jdbc and hibernate in 
+[project tests](https://github.com/alexkasko/task-engine/tree/master/src/test/java/com/alexkasko/tasks/impl)._
 
 ####stage chains creation
 
