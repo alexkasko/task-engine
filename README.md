@@ -3,7 +3,7 @@ Engine for asynchronous multistage suspendable tasks
 
 Library imlements background tasks engine with support for tasks suspending.
 
-Library only depends on [commons-logging](http://commons.apache.org/logging/).
+Library depends on [commons-logging](http://commons.apache.org/logging/).
 
 Library is available in [Maven cental](http://repo1.maven.org/maven2/com/alexkasko/tasks/).
 
@@ -151,6 +151,11 @@ Example of proper implementation assuming READ_COMMITTED transaction isolation l
 
 If task stage processor implements `TaskStageListenableProcessor` interface, it can have `TaskStageListener`s
 attached, that will be fired by `TaskEngine` before or after task stage execution.
+
+License information
+-------------------
+
+This project is released under the [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 Changelog
 ---------
