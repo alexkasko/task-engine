@@ -48,19 +48,12 @@ public class TaskManagerHibernateImpl implements TaskManagerIface {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    @SuppressWarnings("unchecked")
-    public Collection<Long> loadSuspendedIds() {
-        return cs().createSQLQuery("select id from tasks where status='SUSPENDED'")
-                .addScalar("id", new LongType())
-                .list();
-    }
-
-    @Override
     @Transactional
     public void updateStage(long taskId, String stage) {
         Stage st = Stage.valueOf(stage);
         TaskImpl task = (TaskImpl) cs().get(TaskImpl.class, taskId);
+        if(!Status.PROCESSING.equals(task.getStatus())) throw new IllegalStateException(
+                "updateStage method must be called only on 'processing tasks'");
         task.changeStage(st);
         cs().update(task);
     }
@@ -69,6 +62,8 @@ public class TaskManagerHibernateImpl implements TaskManagerIface {
     @Transactional
     public void updateStatusDefault(long taskId) {
         TaskImpl task = (TaskImpl) cs().get(TaskImpl.class, taskId);
+        if(!Status.PROCESSING.equals(task.getStatus())) throw new IllegalStateException(
+                        "updateStage method must be called only on 'processing tasks'");
         task.changeStatus(Status.NORMAL);
         cs().update(task);
     }
@@ -77,6 +72,8 @@ public class TaskManagerHibernateImpl implements TaskManagerIface {
     @Transactional
     public void updateStatusSuspended(long taskId) {
         TaskImpl task = (TaskImpl) cs().get(TaskImpl.class, taskId);
+        if(!Status.PROCESSING.equals(task.getStatus())) throw new IllegalStateException(
+                        "updateStage method must be called only on 'processing tasks'");
         task.changeStatus(Status.SUSPENDED);
         cs().update(task);
     }
@@ -87,6 +84,8 @@ public class TaskManagerHibernateImpl implements TaskManagerIface {
         e.printStackTrace();
         Stage stage = Stage.valueOf(lastCompletedStage);
         TaskImpl task = (TaskImpl) cs().get(TaskImpl.class, taskId);
+        if(!Status.PROCESSING.equals(task.getStatus())) throw new IllegalStateException(
+                        "updateStage method must be called only on 'processing tasks'");
         task.changeStatus(Status.ERROR);
         task.changeStage(stage);
     }

@@ -52,17 +52,12 @@ public class TaskManagerSpringJdbcImpl implements TaskManagerIface {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Collection<Long> loadSuspendedIds() {
-        return jt.getJdbcOperations().queryForList("select id from tasks where status='SUSPENDED'", Long.class);
-    }
-
-    @Override
     @Transactional
     public void updateStage(long taskId, String stage) {
         Stage st = Stage.valueOf(stage);
-        int res = jt.update("update tasks set stage=:st where id=:taskId", ImmutableMap.of(
+        int res = jt.update("update tasks set stage=:st where status=:processing and id=:taskId", ImmutableMap.of(
                 "st", st.name(),
+                "processing", Status.PROCESSING.name(),
                 "taskId", taskId));
         checkState(1 == res, "Wrong updated rows count for taskId: '%s', must be 1 but was: '%s'", taskId, res);
     }
@@ -70,8 +65,9 @@ public class TaskManagerSpringJdbcImpl implements TaskManagerIface {
     @Override
     @Transactional
     public void updateStatusDefault(long taskId) {
-        int res = jt.update("update tasks set status=:status where id=:taskId", ImmutableMap.of(
+        int res = jt.update("update tasks set status=:status where status=:processing and id=:taskId", ImmutableMap.of(
                 "status", Status.NORMAL.name(),
+                "processing", Status.PROCESSING.name(),
                 "taskId", taskId));
         checkState(1 == res, "Wrong updated rows count for taskId: '%s', must be 1 but was: '%s'", taskId, res);
     }
@@ -79,8 +75,9 @@ public class TaskManagerSpringJdbcImpl implements TaskManagerIface {
     @Override
     @Transactional
     public void updateStatusSuspended(long taskId) {
-        int res = jt.update("update tasks set status=:status where id=:taskId", ImmutableMap.of(
+        int res = jt.update("update tasks set status=:status where status=:processing and id=:taskId", ImmutableMap.of(
                 "status", Status.SUSPENDED.name(),
+                "processing", Status.PROCESSING.name(),
                 "taskId", taskId));
         checkState(1 == res, "Wrong updated rows count for taskId: '%s', must be 1 but was: '%s'", taskId, res);
     }
@@ -90,8 +87,9 @@ public class TaskManagerSpringJdbcImpl implements TaskManagerIface {
     public void updateStatusError(long taskId, Exception e, String lastCompletedStage) {
         e.printStackTrace();
         Stage stage = Stage.valueOf(lastCompletedStage);
-        int res = jt.update("update tasks set status=:status, stage=:stage where id=:taskId", ImmutableMap.of(
+        int res = jt.update("update tasks set status=:status, stage=:stage where status=:processing and id=:taskId", ImmutableMap.of(
                 "status", Status.ERROR.name(),
+                "processing", Status.PROCESSING.name(),
                 "stage", stage.name(),
                 "taskId", taskId));
         checkState(1 == res, "Wrong updated rows count for taskId: '%s', must be 1 but was: '%s'", taskId, res);

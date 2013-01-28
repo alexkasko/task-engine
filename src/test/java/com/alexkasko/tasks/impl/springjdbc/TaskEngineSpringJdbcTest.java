@@ -59,7 +59,7 @@ public class TaskEngineSpringJdbcTest {
         @Inject private TaskManagerIface taskManager;
         @Inject private TaskProcessorProvider processorProvider;
 
-        @Bean(initMethod = "init")
+        @Bean
         public TaskEngine taskEngine() {
             return new TaskEngine(MoreExecutors.sameThreadExecutor(), taskManager, processorProvider);
         }

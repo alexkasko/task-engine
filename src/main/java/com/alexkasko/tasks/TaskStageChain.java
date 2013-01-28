@@ -173,24 +173,27 @@ public class TaskStageChain implements Serializable {
             this.start = false;
         }
 
-        public String getIntermediate() {
+        String getIntermediate() {
             if(start) throw new IllegalArgumentException("Start stage: '" + intermediate + "' has no intermediate stage");
             return intermediate;
         }
 
-        public String getCompleted() {
+        String getCompleted() {
             return completed;
         }
 
-        public String getProcessorId() {
+        String getProcessorId() {
             if(start)  throw new IllegalArgumentException("Start stage: '" + completed + "' has no processorId");
             return processorId;
         }
 
-        public boolean isStart() {
+        boolean isStart() {
             return start;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -199,11 +202,17 @@ public class TaskStageChain implements Serializable {
             return completed.equals(stage.completed);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public int hashCode() {
             return completed.hashCode();
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public String toString() {
             return completed;

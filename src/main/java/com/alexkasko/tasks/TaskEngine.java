@@ -34,9 +34,8 @@ public class TaskEngine implements Runnable {
     private final TaskManager<? extends Task> manager;
     private final TaskProcessorProvider provider;
     // concurrent hash set creation
-    private final Set<Long> suspended = newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+    private final Set<Long> awaitsSuspension = newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
     private final Object fireLock = new Object();
-    private final Object suspensionLock = new Object();
 
     /**
      * @param executor executor will be used to process separate stages
@@ -50,19 +49,6 @@ public class TaskEngine implements Runnable {
         this.executor = executor;
         this.manager = manager;
         this.provider = provider;
-    }
-
-    /**
-     * Init method, must be called after task manager init
-     */
-    public void init() {
-        synchronized (suspensionLock) {
-            Collection<Long> tasks = manager.loadSuspendedIds();
-            if(tasks.size() > 0) {
-                logger.info("Suspended tasks cached: '" + tasks + "'");
-                suspended.addAll(tasks);
-            }
-        }
     }
 
     /**
@@ -82,6 +68,7 @@ public class TaskEngine implements Runnable {
             int counter = 0;
             for(Task task : tasksToFire) {
                 if(null == task) throw new IllegalArgumentException("Provided task is null, task list to fire: '" + tasksToFire + "'");
+                awaitsSuspension.remove(task.getId()); // should be suspended during execution, not BEFORE it
                 logger.debug("Firing task: '" + task + "'");
                 Runnable runnable = new StageRunnable(task);
                 executor.execute(runnable);
@@ -108,11 +95,7 @@ public class TaskEngine implements Runnable {
      */
     public boolean suspend(long taskId) {
         logger.debug("Suspending task, id: '" + taskId + "'");
-        synchronized (suspensionLock) {
-            boolean res = suspended.add(taskId);
-            if(res) manager.updateStatusSuspended(taskId);
-            return res;
-        }
+        return awaitsSuspension.add(taskId);
     }
 
     /**
@@ -122,7 +105,7 @@ public class TaskEngine implements Runnable {
      * @throws TaskSuspendedException if task was already suspended
      */
     public void checkSuspended(long taskId) {
-        if(suspended.remove(taskId)) throw new TaskSuspendedException(taskId);
+        if(awaitsSuspension.remove(taskId)) throw new TaskSuspendedException(taskId);
     }
 
     // Runnable instead of Callable is deliberate
@@ -145,38 +128,48 @@ public class TaskEngine implements Runnable {
 
         @SuppressWarnings("unchecked")
         private void runStages() {
-            final TaskStageChain chain = task.stageChain();
+            TaskStageChain chain = task.stageChain();
             TaskStageChain.Stage stage = chain.forName(task.getStageName());
-            boolean markDefaultOnExit = true;
+            boolean success = true;
             while (chain.hasNext(stage)) {
-                if (suspended.remove(task.getId())) {
-                    logger.info("Task, id: '" + task.getId() + "' was suspended, terminating execution");
-                    markDefaultOnExit = false;
+                if (whetherAwaitsSuspension()) {
+                    success = false;
                     break;
                 }
                 stage = chain.next(stage);
-                logger.debug("Starting stage: '" + stage.getIntermediate() + "' for task, id: '" + task.getId() + "'");
-                TaskStageProcessor processor = provider.provide(stage.getProcessorId());
-                if(null == processor) throw new IllegalArgumentException("Null processor returned for id: '" + stage.getProcessorId() + "'");
-                manager.updateStage(task.getId(), stage.getIntermediate());
-                try {
-                    fireBeforeListeners(processor);
-                    processor.process(task.getId());
-                    fireAfterListeners(processor);
-                    logger.debug("Stage: '" + stage.getCompleted() + "' completed for task, id: '" + task.getId() + "'");
-                    manager.updateStage(task.getId(), stage.getCompleted());
-                } catch (TaskSuspendedException e) {
-                    logger.info("Task, id: '" + task.getId() + "' was suspended on stage: '" + stage.getIntermediate() + "'");
-                    manager.updateStage(task.getId(), chain.previous(stage).getCompleted());
-                    markDefaultOnExit = false;
-                    break;
-                } catch (Exception e) {
-                    manager.updateStatusError(task.getId(), e, chain.previous(stage).getCompleted());
-                    markDefaultOnExit = false;
-                    break;
+                success = processStage(stage);
+                if(!success) break;
+            }
+            if (success) {
+                boolean justSuspended = whetherAwaitsSuspension();
+                if (!justSuspended) {
+                    manager.updateStatusDefault(task.getId());
                 }
             }
-            if(markDefaultOnExit) manager.updateStatusDefault(task.getId());
+        }
+
+        private boolean processStage(TaskStageChain.Stage stage) {
+            try {
+                logger.debug("Starting stage: '" + stage.getIntermediate() + "' for task, id: '" + task.getId() + "'");
+                TaskStageProcessor processor = provider.provide(stage.getProcessorId());
+                if (null == processor) throw new IllegalArgumentException("Null processor returned for id: '" + stage.getProcessorId() + "'");
+                manager.updateStage(task.getId(), stage.getIntermediate());
+                fireBeforeListeners(processor);
+                processor.process(task.getId());
+                fireAfterListeners(processor);
+                logger.debug("Stage: '" + stage.getCompleted() + "' completed for task, id: '" + task.getId() + "'");
+                manager.updateStage(task.getId(), stage.getCompleted());
+                return true;
+            } catch (TaskSuspendedException e) {
+                logger.info("Task, id: '" + task.getId() + "' was suspended on stage: '" + stage.getIntermediate() + "'");
+                manager.updateStatusSuspended(task.getId());
+                manager.updateStage(task.getId(), task.stageChain().previous(stage).getCompleted());
+                return false;
+            } catch (Exception e) {
+                logger.error("Task, id: '" + task.getId() + "' caused error on stage: '" + stage.getIntermediate() + "'", e);
+                manager.updateStatusError(task.getId(), e, task.stageChain().previous(stage).getCompleted());
+                return false;
+            }
         }
 
         private void fireBeforeListeners(TaskStageProcessor processor) {
@@ -196,7 +189,12 @@ public class TaskEngine implements Runnable {
                 }
             }
         }
+
+        private boolean whetherAwaitsSuspension() {
+            if (!awaitsSuspension.remove(task.getId())) return false;
+            logger.info("Task, id: '" + task.getId() + "' was suspended, terminating execution");
+            manager.updateStatusSuspended(task.getId());
+            return true;
+        }
     }
-
-
 }

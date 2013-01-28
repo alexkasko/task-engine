@@ -63,7 +63,7 @@ Maven dependency (available in central repository):
     <dependency>
         <groupId>com.alexkasko.tasks</groupId>
         <artifactId>task-engine</artifactId>
-        <version>1.0</version>
+        <version>1.1</version>
     </dependency>
 
 `TaskEngine` implements tasks running, suspending and resuming with proper stage and status updating. `TaskEngine`
@@ -159,6 +159,10 @@ This project is released under the [Apache License 2.0](http://www.apache.org/li
 
 Changelog
 ---------
+
+**1.1** (2013-01-28)
+
+ * suspension race conditions fixed
 
 **1.0** (2012-11-11)
 

@@ -94,7 +94,7 @@ public class TaskEngineHibernateTest {
         @Inject private TaskManagerIface taskManager;
         @Inject private TaskProcessorProvider processorProvider;
 
-        @Bean(initMethod = "init")
+        @Bean
         public TaskEngine taskEngine() {
             return new TaskEngine(newCachedThreadPool(), taskManager, processorProvider);
         }

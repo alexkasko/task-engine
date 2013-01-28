@@ -131,7 +131,8 @@ public class TaskEngineTest {
                 task43wasSuspendedOnce = true;
             }
             taskService.checkSuspended(taskId);
-            if(44 == taskId) throw new RuntimeException("44 is a fail number");
+            if(44 == taskId) throw new RuntimeException("44 is a fail number, throwing it deliberately, " +
+                    "this is not the test fail");
             events.add("ReportsProcessor.task." + taskId);
         }
     }
@@ -145,11 +146,6 @@ public class TaskEngineTest {
             task.changeStatus("processing");
             events.add("TaskDAO.task." + task.getId() + ".status.processing");
             return ImmutableList.of(task);
-        }
-
-        @Override
-        public Collection<Long> loadSuspendedIds() {
-            throw new UnsupportedOperationException();
         }
 
         @Override
