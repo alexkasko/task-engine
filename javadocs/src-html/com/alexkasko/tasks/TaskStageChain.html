@@ -176,43 +176,52 @@
 <FONT color="green">173</FONT>                this.start = false;<a name="line.173"></a>
 <FONT color="green">174</FONT>            }<a name="line.174"></a>
 <FONT color="green">175</FONT>    <a name="line.175"></a>
-<FONT color="green">176</FONT>            public String getIntermediate() {<a name="line.176"></a>
+<FONT color="green">176</FONT>            String getIntermediate() {<a name="line.176"></a>
 <FONT color="green">177</FONT>                if(start) throw new IllegalArgumentException("Start stage: '" + intermediate + "' has no intermediate stage");<a name="line.177"></a>
 <FONT color="green">178</FONT>                return intermediate;<a name="line.178"></a>
 <FONT color="green">179</FONT>            }<a name="line.179"></a>
 <FONT color="green">180</FONT>    <a name="line.180"></a>
-<FONT color="green">181</FONT>            public String getCompleted() {<a name="line.181"></a>
+<FONT color="green">181</FONT>            String getCompleted() {<a name="line.181"></a>
 <FONT color="green">182</FONT>                return completed;<a name="line.182"></a>
 <FONT color="green">183</FONT>            }<a name="line.183"></a>
 <FONT color="green">184</FONT>    <a name="line.184"></a>
-<FONT color="green">185</FONT>            public String getProcessorId() {<a name="line.185"></a>
+<FONT color="green">185</FONT>            String getProcessorId() {<a name="line.185"></a>
 <FONT color="green">186</FONT>                if(start)  throw new IllegalArgumentException("Start stage: '" + completed + "' has no processorId");<a name="line.186"></a>
 <FONT color="green">187</FONT>                return processorId;<a name="line.187"></a>
 <FONT color="green">188</FONT>            }<a name="line.188"></a>
 <FONT color="green">189</FONT>    <a name="line.189"></a>
-<FONT color="green">190</FONT>            public boolean isStart() {<a name="line.190"></a>
+<FONT color="green">190</FONT>            boolean isStart() {<a name="line.190"></a>
 <FONT color="green">191</FONT>                return start;<a name="line.191"></a>
 <FONT color="green">192</FONT>            }<a name="line.192"></a>
 <FONT color="green">193</FONT>    <a name="line.193"></a>
-<FONT color="green">194</FONT>            @Override<a name="line.194"></a>
-<FONT color="green">195</FONT>            public boolean equals(Object o) {<a name="line.195"></a>
-<FONT color="green">196</FONT>                if (this == o) return true;<a name="line.196"></a>
-<FONT color="green">197</FONT>                if (o == null || getClass() != o.getClass()) return false;<a name="line.197"></a>
-<FONT color="green">198</FONT>                Stage stage = (Stage) o;<a name="line.198"></a>
-<FONT color="green">199</FONT>                return completed.equals(stage.completed);<a name="line.199"></a>
-<FONT color="green">200</FONT>            }<a name="line.200"></a>
-<FONT color="green">201</FONT>    <a name="line.201"></a>
-<FONT color="green">202</FONT>            @Override<a name="line.202"></a>
-<FONT color="green">203</FONT>            public int hashCode() {<a name="line.203"></a>
-<FONT color="green">204</FONT>                return completed.hashCode();<a name="line.204"></a>
-<FONT color="green">205</FONT>            }<a name="line.205"></a>
-<FONT color="green">206</FONT>    <a name="line.206"></a>
-<FONT color="green">207</FONT>            @Override<a name="line.207"></a>
-<FONT color="green">208</FONT>            public String toString() {<a name="line.208"></a>
-<FONT color="green">209</FONT>                return completed;<a name="line.209"></a>
-<FONT color="green">210</FONT>            }<a name="line.210"></a>
-<FONT color="green">211</FONT>        }<a name="line.211"></a>
-<FONT color="green">212</FONT>    }<a name="line.212"></a>
+<FONT color="green">194</FONT>            /**<a name="line.194"></a>
+<FONT color="green">195</FONT>             * {@inheritDoc}<a name="line.195"></a>
+<FONT color="green">196</FONT>             */<a name="line.196"></a>
+<FONT color="green">197</FONT>            @Override<a name="line.197"></a>
+<FONT color="green">198</FONT>            public boolean equals(Object o) {<a name="line.198"></a>
+<FONT color="green">199</FONT>                if (this == o) return true;<a name="line.199"></a>
+<FONT color="green">200</FONT>                if (o == null || getClass() != o.getClass()) return false;<a name="line.200"></a>
+<FONT color="green">201</FONT>                Stage stage = (Stage) o;<a name="line.201"></a>
+<FONT color="green">202</FONT>                return completed.equals(stage.completed);<a name="line.202"></a>
+<FONT color="green">203</FONT>            }<a name="line.203"></a>
+<FONT color="green">204</FONT>    <a name="line.204"></a>
+<FONT color="green">205</FONT>            /**<a name="line.205"></a>
+<FONT color="green">206</FONT>             * {@inheritDoc}<a name="line.206"></a>
+<FONT color="green">207</FONT>             */<a name="line.207"></a>
+<FONT color="green">208</FONT>            @Override<a name="line.208"></a>
+<FONT color="green">209</FONT>            public int hashCode() {<a name="line.209"></a>
+<FONT color="green">210</FONT>                return completed.hashCode();<a name="line.210"></a>
+<FONT color="green">211</FONT>            }<a name="line.211"></a>
+<FONT color="green">212</FONT>    <a name="line.212"></a>
+<FONT color="green">213</FONT>            /**<a name="line.213"></a>
+<FONT color="green">214</FONT>             * {@inheritDoc}<a name="line.214"></a>
+<FONT color="green">215</FONT>             */<a name="line.215"></a>
+<FONT color="green">216</FONT>            @Override<a name="line.216"></a>
+<FONT color="green">217</FONT>            public String toString() {<a name="line.217"></a>
+<FONT color="green">218</FONT>                return completed;<a name="line.218"></a>
+<FONT color="green">219</FONT>            }<a name="line.219"></a>
+<FONT color="green">220</FONT>        }<a name="line.220"></a>
+<FONT color="green">221</FONT>    }<a name="line.221"></a>
 
 
 

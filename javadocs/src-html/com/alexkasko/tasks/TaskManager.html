@@ -18,49 +18,47 @@
 <FONT color="green">015</FONT>         * This method is used to load new and resumed tasks to run.<a name="line.15"></a>
 <FONT color="green">016</FONT>         * All returning tasks should be switched into 'processing' status in DB.<a name="line.16"></a>
 <FONT color="green">017</FONT>         * It's implementation responsibility to not return tasks that may be running in that moment.<a name="line.17"></a>
-<FONT color="green">018</FONT>         *<a name="line.18"></a>
-<FONT color="green">019</FONT>         * @return collection of tasks to run<a name="line.19"></a>
-<FONT color="green">020</FONT>         */<a name="line.20"></a>
-<FONT color="green">021</FONT>        Collection&lt;? extends T&gt; markProcessingAndLoad();<a name="line.21"></a>
-<FONT color="green">022</FONT>    <a name="line.22"></a>
-<FONT color="green">023</FONT>        /**<a name="line.23"></a>
-<FONT color="green">024</FONT>         * This method will be used to cache all suspended task ids on engine startup.<a name="line.24"></a>
-<FONT color="green">025</FONT>         *<a name="line.25"></a>
-<FONT color="green">026</FONT>         * @return collection of suspended tasks ids<a name="line.26"></a>
-<FONT color="green">027</FONT>         */<a name="line.27"></a>
-<FONT color="green">028</FONT>        Collection&lt;Long&gt; loadSuspendedIds();<a name="line.28"></a>
-<FONT color="green">029</FONT>    <a name="line.29"></a>
-<FONT color="green">030</FONT>        /**<a name="line.30"></a>
-<FONT color="green">031</FONT>         * Changes task stage, will be called between stages processing<a name="line.31"></a>
-<FONT color="green">032</FONT>         *<a name="line.32"></a>
-<FONT color="green">033</FONT>         * @param taskId task id<a name="line.33"></a>
-<FONT color="green">034</FONT>         * @param stage new stage<a name="line.34"></a>
-<FONT color="green">035</FONT>         */<a name="line.35"></a>
-<FONT color="green">036</FONT>        void updateStage(long taskId, String stage);<a name="line.36"></a>
-<FONT color="green">037</FONT>    <a name="line.37"></a>
-<FONT color="green">038</FONT>        /**<a name="line.38"></a>
-<FONT color="green">039</FONT>         * Changes task status to default, will be called after successful processing of last stage<a name="line.39"></a>
-<FONT color="green">040</FONT>         *<a name="line.40"></a>
-<FONT color="green">041</FONT>         * @param taskId task id<a name="line.41"></a>
-<FONT color="green">042</FONT>         */<a name="line.42"></a>
-<FONT color="green">043</FONT>        void updateStatusDefault(long taskId);<a name="line.43"></a>
-<FONT color="green">044</FONT>    <a name="line.44"></a>
-<FONT color="green">045</FONT>        /**<a name="line.45"></a>
-<FONT color="green">046</FONT>         * Changes task status to default, will be called after on task suspend<a name="line.46"></a>
-<FONT color="green">047</FONT>         *<a name="line.47"></a>
-<FONT color="green">048</FONT>         * @param taskId task id<a name="line.48"></a>
-<FONT color="green">049</FONT>         */<a name="line.49"></a>
-<FONT color="green">050</FONT>        void updateStatusSuspended(long taskId);<a name="line.50"></a>
-<FONT color="green">051</FONT>    <a name="line.51"></a>
-<FONT color="green">052</FONT>        /**<a name="line.52"></a>
-<FONT color="green">053</FONT>         * Changes task status into "error" and task stage into last completed stage<a name="line.53"></a>
-<FONT color="green">054</FONT>         *<a name="line.54"></a>
-<FONT color="green">055</FONT>         * @param taskId task id<a name="line.55"></a>
-<FONT color="green">056</FONT>         * @param e exception<a name="line.56"></a>
-<FONT color="green">057</FONT>         * @param lastCompletedStage name of last completed stage<a name="line.57"></a>
-<FONT color="green">058</FONT>         */<a name="line.58"></a>
-<FONT color="green">059</FONT>        void updateStatusError(long taskId, Exception e, String lastCompletedStage);<a name="line.59"></a>
-<FONT color="green">060</FONT>    }<a name="line.60"></a>
+<FONT color="green">018</FONT>         * Will be called from fire-caller thread.<a name="line.18"></a>
+<FONT color="green">019</FONT>         *<a name="line.19"></a>
+<FONT color="green">020</FONT>         * @return collection of tasks to run<a name="line.20"></a>
+<FONT color="green">021</FONT>         */<a name="line.21"></a>
+<FONT color="green">022</FONT>        Collection&lt;? extends T&gt; markProcessingAndLoad();<a name="line.22"></a>
+<FONT color="green">023</FONT>    <a name="line.23"></a>
+<FONT color="green">024</FONT>        /**<a name="line.24"></a>
+<FONT color="green">025</FONT>         * Changes task stage, will be called between stages processing<a name="line.25"></a>
+<FONT color="green">026</FONT>         * from stage-executor's thread only for tasks being in 'processing' status.<a name="line.26"></a>
+<FONT color="green">027</FONT>         *<a name="line.27"></a>
+<FONT color="green">028</FONT>         * @param taskId task id<a name="line.28"></a>
+<FONT color="green">029</FONT>         * @param stage new stage<a name="line.29"></a>
+<FONT color="green">030</FONT>         */<a name="line.30"></a>
+<FONT color="green">031</FONT>        void updateStage(long taskId, String stage);<a name="line.31"></a>
+<FONT color="green">032</FONT>    <a name="line.32"></a>
+<FONT color="green">033</FONT>        /**<a name="line.33"></a>
+<FONT color="green">034</FONT>         * Changes task status to default, will be called after successful processing of last stage<a name="line.34"></a>
+<FONT color="green">035</FONT>         * from stage-executor's thread only for tasks being in 'processing' status.<a name="line.35"></a>
+<FONT color="green">036</FONT>         *<a name="line.36"></a>
+<FONT color="green">037</FONT>         * @param taskId task id<a name="line.37"></a>
+<FONT color="green">038</FONT>         */<a name="line.38"></a>
+<FONT color="green">039</FONT>        void updateStatusDefault(long taskId);<a name="line.39"></a>
+<FONT color="green">040</FONT>    <a name="line.40"></a>
+<FONT color="green">041</FONT>        /**<a name="line.41"></a>
+<FONT color="green">042</FONT>         * Changes task status to from 'processing' to 'suspended', will be called on task suspension<a name="line.42"></a>
+<FONT color="green">043</FONT>         * from stage-executor's thread only for tasks being in 'processing' status.<a name="line.43"></a>
+<FONT color="green">044</FONT>         *<a name="line.44"></a>
+<FONT color="green">045</FONT>         * @param taskId task id<a name="line.45"></a>
+<FONT color="green">046</FONT>         */<a name="line.46"></a>
+<FONT color="green">047</FONT>        void updateStatusSuspended(long taskId);<a name="line.47"></a>
+<FONT color="green">048</FONT>    <a name="line.48"></a>
+<FONT color="green">049</FONT>        /**<a name="line.49"></a>
+<FONT color="green">050</FONT>         * Changes task status into "error" and task stage into last completed stage, will be called on processor's error<a name="line.50"></a>
+<FONT color="green">051</FONT>         * from stage-executor's thread only for tasks being in 'processing' status.<a name="line.51"></a>
+<FONT color="green">052</FONT>         *<a name="line.52"></a>
+<FONT color="green">053</FONT>         * @param taskId task id<a name="line.53"></a>
+<FONT color="green">054</FONT>         * @param e exception<a name="line.54"></a>
+<FONT color="green">055</FONT>         * @param lastCompletedStage name of last completed stage<a name="line.55"></a>
+<FONT color="green">056</FONT>         */<a name="line.56"></a>
+<FONT color="green">057</FONT>        void updateStatusError(long taskId, Exception e, String lastCompletedStage);<a name="line.57"></a>
+<FONT color="green">058</FONT>    }<a name="line.58"></a>
 
 
 
