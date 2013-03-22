@@ -8,7 +8,7 @@
     </parent>
     <groupId>com.alexkasko.tasks</groupId>
     <artifactId>task-engine</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2</version>
     <packaging>jar</packaging>
     <name>Task Engine</name>
 
@@ -26,7 +26,7 @@
         <url>https://github.com/alexkasko/task-engine</url>
         <connection>scm:git:https://github.com/alexkasko/task-engine.git</connection>
         <developerConnection>scm:git:https://github.com/alexkasko/task-engine.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>1.2</tag>
     </scm>
     <developers>
         <developer>
