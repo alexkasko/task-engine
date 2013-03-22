@@ -14,10 +14,15 @@
 <FONT color="green">011</FONT>    public class TaskSuspendedException extends RuntimeException {<a name="line.11"></a>
 <FONT color="green">012</FONT>        private static final long serialVersionUID = 3388511296426912332L;<a name="line.12"></a>
 <FONT color="green">013</FONT>    <a name="line.13"></a>
-<FONT color="green">014</FONT>        public TaskSuspendedException(long taskId) {<a name="line.14"></a>
-<FONT color="green">015</FONT>            super(Long.toString(taskId));<a name="line.15"></a>
-<FONT color="green">016</FONT>        }<a name="line.16"></a>
-<FONT color="green">017</FONT>    }<a name="line.17"></a>
+<FONT color="green">014</FONT>        /**<a name="line.14"></a>
+<FONT color="green">015</FONT>         * Constructor<a name="line.15"></a>
+<FONT color="green">016</FONT>         *<a name="line.16"></a>
+<FONT color="green">017</FONT>         * @param taskId task ID<a name="line.17"></a>
+<FONT color="green">018</FONT>         */<a name="line.18"></a>
+<FONT color="green">019</FONT>        public TaskSuspendedException(long taskId) {<a name="line.19"></a>
+<FONT color="green">020</FONT>            super(Long.toString(taskId));<a name="line.20"></a>
+<FONT color="green">021</FONT>        }<a name="line.21"></a>
+<FONT color="green">022</FONT>    }<a name="line.22"></a>
 
 
 

@@ -34,12 +34,12 @@
 <FONT color="green">031</FONT>        void updateStage(long taskId, String stage);<a name="line.31"></a>
 <FONT color="green">032</FONT>    <a name="line.32"></a>
 <FONT color="green">033</FONT>        /**<a name="line.33"></a>
-<FONT color="green">034</FONT>         * Changes task status to default, will be called after successful processing of last stage<a name="line.34"></a>
+<FONT color="green">034</FONT>         * Changes task status to 'success', will be called after successful processing of last stage<a name="line.34"></a>
 <FONT color="green">035</FONT>         * from stage-executor's thread only for tasks being in 'processing' status.<a name="line.35"></a>
 <FONT color="green">036</FONT>         *<a name="line.36"></a>
 <FONT color="green">037</FONT>         * @param taskId task id<a name="line.37"></a>
 <FONT color="green">038</FONT>         */<a name="line.38"></a>
-<FONT color="green">039</FONT>        void updateStatusDefault(long taskId);<a name="line.39"></a>
+<FONT color="green">039</FONT>        void updateStatusSuccess(long taskId);<a name="line.39"></a>
 <FONT color="green">040</FONT>    <a name="line.40"></a>
 <FONT color="green">041</FONT>        /**<a name="line.41"></a>
 <FONT color="green">042</FONT>         * Changes task status to from 'processing' to 'suspended', will be called on task suspension<a name="line.42"></a>

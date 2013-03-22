@@ -41,166 +41,173 @@
 <FONT color="green">038</FONT>        private final Object fireLock = new Object();<a name="line.38"></a>
 <FONT color="green">039</FONT>    <a name="line.39"></a>
 <FONT color="green">040</FONT>        /**<a name="line.40"></a>
-<FONT color="green">041</FONT>         * @param executor executor will be used to process separate stages<a name="line.41"></a>
-<FONT color="green">042</FONT>         * @param manager tasks DAO for all task state operations<a name="line.42"></a>
-<FONT color="green">043</FONT>         * @param provider stage processors provider<a name="line.43"></a>
-<FONT color="green">044</FONT>         */<a name="line.44"></a>
-<FONT color="green">045</FONT>        public TaskEngine(Executor executor, TaskManager&lt;? extends Task&gt; manager, TaskProcessorProvider provider) {<a name="line.45"></a>
-<FONT color="green">046</FONT>            if(null == executor) throw new IllegalArgumentException("Provided executor is null");<a name="line.46"></a>
-<FONT color="green">047</FONT>            if(null == manager) throw new IllegalArgumentException("Provided manager is null");<a name="line.47"></a>
-<FONT color="green">048</FONT>            if(null == provider) throw new IllegalArgumentException("Input provider is null");<a name="line.48"></a>
-<FONT color="green">049</FONT>            this.executor = executor;<a name="line.49"></a>
-<FONT color="green">050</FONT>            this.manager = manager;<a name="line.50"></a>
-<FONT color="green">051</FONT>            this.provider = provider;<a name="line.51"></a>
-<FONT color="green">052</FONT>        }<a name="line.52"></a>
-<FONT color="green">053</FONT>    <a name="line.53"></a>
-<FONT color="green">054</FONT>        /**<a name="line.54"></a>
-<FONT color="green">055</FONT>         * Sends tasks provided by {@link TaskManager#markProcessingAndLoad()}<a name="line.55"></a>
-<FONT color="green">056</FONT>         * to execution<a name="line.56"></a>
-<FONT color="green">057</FONT>         *<a name="line.57"></a>
-<FONT color="green">058</FONT>         * @return count of tasks sent for processing<a name="line.58"></a>
-<FONT color="green">059</FONT>         */<a name="line.59"></a>
-<FONT color="green">060</FONT>        public int fire() {<a name="line.60"></a>
-<FONT color="green">061</FONT>            synchronized (fireLock) {<a name="line.61"></a>
-<FONT color="green">062</FONT>                Collection&lt;? extends Task&gt; tasksToFire = manager.markProcessingAndLoad();<a name="line.62"></a>
-<FONT color="green">063</FONT>                if(0 == tasksToFire.size()) {<a name="line.63"></a>
-<FONT color="green">064</FONT>                    logger.debug("No tasks to fire, returning to sleep");<a name="line.64"></a>
-<FONT color="green">065</FONT>                    return 0;<a name="line.65"></a>
-<FONT color="green">066</FONT>                }<a name="line.66"></a>
-<FONT color="green">067</FONT>                // fire tasks<a name="line.67"></a>
-<FONT color="green">068</FONT>                int counter = 0;<a name="line.68"></a>
-<FONT color="green">069</FONT>                for(Task task : tasksToFire) {<a name="line.69"></a>
-<FONT color="green">070</FONT>                    if(null == task) throw new IllegalArgumentException("Provided task is null, task list to fire: '" + tasksToFire + "'");<a name="line.70"></a>
-<FONT color="green">071</FONT>                    awaitsSuspension.remove(task.getId()); // should be suspended during execution, not BEFORE it<a name="line.71"></a>
-<FONT color="green">072</FONT>                    logger.debug("Firing task: '" + task + "'");<a name="line.72"></a>
-<FONT color="green">073</FONT>                    Runnable runnable = new StageRunnable(task);<a name="line.73"></a>
-<FONT color="green">074</FONT>                    executor.execute(runnable);<a name="line.74"></a>
-<FONT color="green">075</FONT>                    counter += 1;<a name="line.75"></a>
-<FONT color="green">076</FONT>                }<a name="line.76"></a>
-<FONT color="green">077</FONT>                if(counter &gt; 0 ) logger.info(counter + " tasks fired");<a name="line.77"></a>
-<FONT color="green">078</FONT>                return counter;<a name="line.78"></a>
-<FONT color="green">079</FONT>            }<a name="line.79"></a>
-<FONT color="green">080</FONT>        }<a name="line.80"></a>
-<FONT color="green">081</FONT>    <a name="line.81"></a>
-<FONT color="green">082</FONT>        /**<a name="line.82"></a>
-<FONT color="green">083</FONT>         * Scheduler friendly fire wrapper<a name="line.83"></a>
-<FONT color="green">084</FONT>         */<a name="line.84"></a>
-<FONT color="green">085</FONT>        @Override<a name="line.85"></a>
-<FONT color="green">086</FONT>        public void run() {<a name="line.86"></a>
-<FONT color="green">087</FONT>            fire();<a name="line.87"></a>
-<FONT color="green">088</FONT>        }<a name="line.88"></a>
-<FONT color="green">089</FONT>    <a name="line.89"></a>
-<FONT color="green">090</FONT>        /**<a name="line.90"></a>
-<FONT color="green">091</FONT>         * Mark task as suspended<a name="line.91"></a>
-<FONT color="green">092</FONT>         *<a name="line.92"></a>
-<FONT color="green">093</FONT>         * @param taskId task id<a name="line.93"></a>
-<FONT color="green">094</FONT>         * @return {@code false} if task was already suspended, {@code true} otherwise<a name="line.94"></a>
-<FONT color="green">095</FONT>         */<a name="line.95"></a>
-<FONT color="green">096</FONT>        public boolean suspend(long taskId) {<a name="line.96"></a>
-<FONT color="green">097</FONT>            logger.debug("Suspending task, id: '" + taskId + "'");<a name="line.97"></a>
-<FONT color="green">098</FONT>            return awaitsSuspension.add(taskId);<a name="line.98"></a>
-<FONT color="green">099</FONT>        }<a name="line.99"></a>
-<FONT color="green">100</FONT>    <a name="line.100"></a>
-<FONT color="green">101</FONT>        /**<a name="line.101"></a>
-<FONT color="green">102</FONT>         * Throws {@link TaskSuspendedException} on successful suspension check<a name="line.102"></a>
-<FONT color="green">103</FONT>         *<a name="line.103"></a>
-<FONT color="green">104</FONT>         * @param taskId task id<a name="line.104"></a>
-<FONT color="green">105</FONT>         * @throws TaskSuspendedException if task was already suspended<a name="line.105"></a>
-<FONT color="green">106</FONT>         */<a name="line.106"></a>
-<FONT color="green">107</FONT>        public void checkSuspended(long taskId) {<a name="line.107"></a>
-<FONT color="green">108</FONT>            if(awaitsSuspension.remove(taskId)) throw new TaskSuspendedException(taskId);<a name="line.108"></a>
-<FONT color="green">109</FONT>        }<a name="line.109"></a>
-<FONT color="green">110</FONT>    <a name="line.110"></a>
-<FONT color="green">111</FONT>        // Runnable instead of Callable is deliberate<a name="line.111"></a>
-<FONT color="green">112</FONT>        private class StageRunnable implements Runnable {<a name="line.112"></a>
-<FONT color="green">113</FONT>            private final Task task;<a name="line.113"></a>
-<FONT color="green">114</FONT>    <a name="line.114"></a>
-<FONT color="green">115</FONT>            StageRunnable(Task task) {<a name="line.115"></a>
-<FONT color="green">116</FONT>                if(null == task.stageChain()) throw new IllegalArgumentException("Task, id: '" + task.getId() + "' returns null stageChain");<a name="line.116"></a>
-<FONT color="green">117</FONT>                this.task = task;<a name="line.117"></a>
-<FONT color="green">118</FONT>            }<a name="line.118"></a>
-<FONT color="green">119</FONT>    <a name="line.119"></a>
-<FONT color="green">120</FONT>            @Override<a name="line.120"></a>
-<FONT color="green">121</FONT>            public void run() {<a name="line.121"></a>
-<FONT color="green">122</FONT>                try {<a name="line.122"></a>
-<FONT color="green">123</FONT>                    runStages();<a name="line.123"></a>
-<FONT color="green">124</FONT>                } catch (Exception e) {<a name="line.124"></a>
-<FONT color="green">125</FONT>                    logger.error("System error running task, id: '" + task.getId() + "'", e);<a name="line.125"></a>
-<FONT color="green">126</FONT>                }<a name="line.126"></a>
-<FONT color="green">127</FONT>            }<a name="line.127"></a>
-<FONT color="green">128</FONT>    <a name="line.128"></a>
-<FONT color="green">129</FONT>            @SuppressWarnings("unchecked")<a name="line.129"></a>
-<FONT color="green">130</FONT>            private void runStages() {<a name="line.130"></a>
-<FONT color="green">131</FONT>                TaskStageChain chain = task.stageChain();<a name="line.131"></a>
-<FONT color="green">132</FONT>                TaskStageChain.Stage stage = chain.forName(task.getStageName());<a name="line.132"></a>
-<FONT color="green">133</FONT>                boolean success = true;<a name="line.133"></a>
-<FONT color="green">134</FONT>                while (chain.hasNext(stage)) {<a name="line.134"></a>
-<FONT color="green">135</FONT>                    if (whetherAwaitsSuspension()) {<a name="line.135"></a>
-<FONT color="green">136</FONT>                        success = false;<a name="line.136"></a>
-<FONT color="green">137</FONT>                        break;<a name="line.137"></a>
-<FONT color="green">138</FONT>                    }<a name="line.138"></a>
-<FONT color="green">139</FONT>                    stage = chain.next(stage);<a name="line.139"></a>
-<FONT color="green">140</FONT>                    success = processStage(stage);<a name="line.140"></a>
-<FONT color="green">141</FONT>                    if(!success) break;<a name="line.141"></a>
-<FONT color="green">142</FONT>                }<a name="line.142"></a>
-<FONT color="green">143</FONT>                if (success) {<a name="line.143"></a>
-<FONT color="green">144</FONT>                    boolean justSuspended = whetherAwaitsSuspension();<a name="line.144"></a>
-<FONT color="green">145</FONT>                    if (!justSuspended) {<a name="line.145"></a>
-<FONT color="green">146</FONT>                        manager.updateStatusDefault(task.getId());<a name="line.146"></a>
-<FONT color="green">147</FONT>                    }<a name="line.147"></a>
-<FONT color="green">148</FONT>                }<a name="line.148"></a>
-<FONT color="green">149</FONT>            }<a name="line.149"></a>
-<FONT color="green">150</FONT>    <a name="line.150"></a>
-<FONT color="green">151</FONT>            private boolean processStage(TaskStageChain.Stage stage) {<a name="line.151"></a>
-<FONT color="green">152</FONT>                try {<a name="line.152"></a>
-<FONT color="green">153</FONT>                    logger.debug("Starting stage: '" + stage.getIntermediate() + "' for task, id: '" + task.getId() + "'");<a name="line.153"></a>
-<FONT color="green">154</FONT>                    TaskStageProcessor processor = provider.provide(stage.getProcessorId());<a name="line.154"></a>
-<FONT color="green">155</FONT>                    if (null == processor) throw new IllegalArgumentException("Null processor returned for id: '" + stage.getProcessorId() + "'");<a name="line.155"></a>
-<FONT color="green">156</FONT>                    manager.updateStage(task.getId(), stage.getIntermediate());<a name="line.156"></a>
-<FONT color="green">157</FONT>                    fireBeforeListeners(processor);<a name="line.157"></a>
-<FONT color="green">158</FONT>                    processor.process(task.getId());<a name="line.158"></a>
-<FONT color="green">159</FONT>                    fireAfterListeners(processor);<a name="line.159"></a>
-<FONT color="green">160</FONT>                    logger.debug("Stage: '" + stage.getCompleted() + "' completed for task, id: '" + task.getId() + "'");<a name="line.160"></a>
-<FONT color="green">161</FONT>                    manager.updateStage(task.getId(), stage.getCompleted());<a name="line.161"></a>
-<FONT color="green">162</FONT>                    return true;<a name="line.162"></a>
-<FONT color="green">163</FONT>                } catch (TaskSuspendedException e) {<a name="line.163"></a>
-<FONT color="green">164</FONT>                    logger.info("Task, id: '" + task.getId() + "' was suspended on stage: '" + stage.getIntermediate() + "'");<a name="line.164"></a>
-<FONT color="green">165</FONT>                    manager.updateStatusSuspended(task.getId());<a name="line.165"></a>
-<FONT color="green">166</FONT>                    manager.updateStage(task.getId(), task.stageChain().previous(stage).getCompleted());<a name="line.166"></a>
-<FONT color="green">167</FONT>                    return false;<a name="line.167"></a>
-<FONT color="green">168</FONT>                } catch (Exception e) {<a name="line.168"></a>
-<FONT color="green">169</FONT>                    logger.error("Task, id: '" + task.getId() + "' caused error on stage: '" + stage.getIntermediate() + "'", e);<a name="line.169"></a>
-<FONT color="green">170</FONT>                    manager.updateStatusError(task.getId(), e, task.stageChain().previous(stage).getCompleted());<a name="line.170"></a>
-<FONT color="green">171</FONT>                    return false;<a name="line.171"></a>
-<FONT color="green">172</FONT>                }<a name="line.172"></a>
-<FONT color="green">173</FONT>            }<a name="line.173"></a>
-<FONT color="green">174</FONT>    <a name="line.174"></a>
-<FONT color="green">175</FONT>            private void fireBeforeListeners(TaskStageProcessor processor) {<a name="line.175"></a>
-<FONT color="green">176</FONT>                if(processor instanceof TaskStageListenableProcessor) {<a name="line.176"></a>
-<FONT color="green">177</FONT>                    TaskStageListenableProcessor listen = (TaskStageListenableProcessor) processor;<a name="line.177"></a>
-<FONT color="green">178</FONT>                    for(TaskStageListener li : listen.beforeStartListeners()) {<a name="line.178"></a>
-<FONT color="green">179</FONT>                        li.fire(task.getId());<a name="line.179"></a>
-<FONT color="green">180</FONT>                    }<a name="line.180"></a>
-<FONT color="green">181</FONT>                }<a name="line.181"></a>
-<FONT color="green">182</FONT>            }<a name="line.182"></a>
-<FONT color="green">183</FONT>    <a name="line.183"></a>
-<FONT color="green">184</FONT>            private void fireAfterListeners(TaskStageProcessor processor) {<a name="line.184"></a>
-<FONT color="green">185</FONT>                if(processor instanceof TaskStageListenableProcessor) {<a name="line.185"></a>
-<FONT color="green">186</FONT>                    TaskStageListenableProcessor listen = (TaskStageListenableProcessor) processor;<a name="line.186"></a>
-<FONT color="green">187</FONT>                    for(TaskStageListener li : listen.afterFinishListeners()) {<a name="line.187"></a>
-<FONT color="green">188</FONT>                        li.fire(task.getId());<a name="line.188"></a>
-<FONT color="green">189</FONT>                    }<a name="line.189"></a>
-<FONT color="green">190</FONT>                }<a name="line.190"></a>
-<FONT color="green">191</FONT>            }<a name="line.191"></a>
-<FONT color="green">192</FONT>    <a name="line.192"></a>
-<FONT color="green">193</FONT>            private boolean whetherAwaitsSuspension() {<a name="line.193"></a>
-<FONT color="green">194</FONT>                if (!awaitsSuspension.remove(task.getId())) return false;<a name="line.194"></a>
-<FONT color="green">195</FONT>                logger.info("Task, id: '" + task.getId() + "' was suspended, terminating execution");<a name="line.195"></a>
-<FONT color="green">196</FONT>                manager.updateStatusSuspended(task.getId());<a name="line.196"></a>
-<FONT color="green">197</FONT>                return true;<a name="line.197"></a>
+<FONT color="green">041</FONT>         * Constructor<a name="line.41"></a>
+<FONT color="green">042</FONT>         *<a name="line.42"></a>
+<FONT color="green">043</FONT>         * @param executor executor will be used to process separate stages<a name="line.43"></a>
+<FONT color="green">044</FONT>         * @param manager tasks DAO for all task state operations<a name="line.44"></a>
+<FONT color="green">045</FONT>         * @param provider stage processors provider<a name="line.45"></a>
+<FONT color="green">046</FONT>         * @throws TaskEngineException on invalid input<a name="line.46"></a>
+<FONT color="green">047</FONT>         */<a name="line.47"></a>
+<FONT color="green">048</FONT>        public TaskEngine(Executor executor, TaskManager&lt;? extends Task&gt; manager, TaskProcessorProvider provider)<a name="line.48"></a>
+<FONT color="green">049</FONT>                throws TaskEngineException {<a name="line.49"></a>
+<FONT color="green">050</FONT>            if(null == executor) throw new TaskEngineException("Provided executor is null");<a name="line.50"></a>
+<FONT color="green">051</FONT>            if(null == manager) throw new TaskEngineException("Provided manager is null");<a name="line.51"></a>
+<FONT color="green">052</FONT>            if(null == provider) throw new TaskEngineException("Input provider is null");<a name="line.52"></a>
+<FONT color="green">053</FONT>            this.executor = executor;<a name="line.53"></a>
+<FONT color="green">054</FONT>            this.manager = manager;<a name="line.54"></a>
+<FONT color="green">055</FONT>            this.provider = provider;<a name="line.55"></a>
+<FONT color="green">056</FONT>        }<a name="line.56"></a>
+<FONT color="green">057</FONT>    <a name="line.57"></a>
+<FONT color="green">058</FONT>        /**<a name="line.58"></a>
+<FONT color="green">059</FONT>         * Sends tasks provided by {@link TaskManager#markProcessingAndLoad()}<a name="line.59"></a>
+<FONT color="green">060</FONT>         * to execution<a name="line.60"></a>
+<FONT color="green">061</FONT>         *<a name="line.61"></a>
+<FONT color="green">062</FONT>         * @return count of tasks sent for processing<a name="line.62"></a>
+<FONT color="green">063</FONT>         * @throws TaskEngineException on invalid results of {@link com.alexkasko.tasks.TaskManager#markProcessingAndLoad()}<a name="line.63"></a>
+<FONT color="green">064</FONT>         */<a name="line.64"></a>
+<FONT color="green">065</FONT>        public int fire() throws TaskEngineException {<a name="line.65"></a>
+<FONT color="green">066</FONT>            synchronized (fireLock) {<a name="line.66"></a>
+<FONT color="green">067</FONT>                Collection&lt;? extends Task&gt; tasksToFire = manager.markProcessingAndLoad();<a name="line.67"></a>
+<FONT color="green">068</FONT>                if(0 == tasksToFire.size()) {<a name="line.68"></a>
+<FONT color="green">069</FONT>                    logger.debug("No tasks to fire, returning to sleep");<a name="line.69"></a>
+<FONT color="green">070</FONT>                    return 0;<a name="line.70"></a>
+<FONT color="green">071</FONT>                }<a name="line.71"></a>
+<FONT color="green">072</FONT>                // fire tasks<a name="line.72"></a>
+<FONT color="green">073</FONT>                int counter = 0;<a name="line.73"></a>
+<FONT color="green">074</FONT>                for(Task task : tasksToFire) {<a name="line.74"></a>
+<FONT color="green">075</FONT>                    if(null == task) throw new TaskEngineException("Provided task is null, task list to fire: [" + tasksToFire + "]");<a name="line.75"></a>
+<FONT color="green">076</FONT>                    awaitsSuspension.remove(task.getId()); // should be suspended during execution, not BEFORE it<a name="line.76"></a>
+<FONT color="green">077</FONT>                    logger.debug("Firing task: [" + task + "]");<a name="line.77"></a>
+<FONT color="green">078</FONT>                    Runnable runnable = new StageRunnable(task);<a name="line.78"></a>
+<FONT color="green">079</FONT>                    executor.execute(runnable);<a name="line.79"></a>
+<FONT color="green">080</FONT>                    counter += 1;<a name="line.80"></a>
+<FONT color="green">081</FONT>                }<a name="line.81"></a>
+<FONT color="green">082</FONT>                if(counter &gt; 0 ) logger.debug(counter + " tasks fired");<a name="line.82"></a>
+<FONT color="green">083</FONT>                return counter;<a name="line.83"></a>
+<FONT color="green">084</FONT>            }<a name="line.84"></a>
+<FONT color="green">085</FONT>        }<a name="line.85"></a>
+<FONT color="green">086</FONT>    <a name="line.86"></a>
+<FONT color="green">087</FONT>        /**<a name="line.87"></a>
+<FONT color="green">088</FONT>         * Scheduler friendly fire wrapper<a name="line.88"></a>
+<FONT color="green">089</FONT>         *<a name="line.89"></a>
+<FONT color="green">090</FONT>         * @throws TaskEngineException on invalid results of {@link com.alexkasko.tasks.TaskManager#markProcessingAndLoad()}<a name="line.90"></a>
+<FONT color="green">091</FONT>         */<a name="line.91"></a>
+<FONT color="green">092</FONT>        @Override<a name="line.92"></a>
+<FONT color="green">093</FONT>        public void run() throws TaskEngineException {<a name="line.93"></a>
+<FONT color="green">094</FONT>            fire();<a name="line.94"></a>
+<FONT color="green">095</FONT>        }<a name="line.95"></a>
+<FONT color="green">096</FONT>    <a name="line.96"></a>
+<FONT color="green">097</FONT>        /**<a name="line.97"></a>
+<FONT color="green">098</FONT>         * Mark task as suspended<a name="line.98"></a>
+<FONT color="green">099</FONT>         *<a name="line.99"></a>
+<FONT color="green">100</FONT>         * @param taskId task id<a name="line.100"></a>
+<FONT color="green">101</FONT>         * @return {@code false} if task was already suspended, {@code true} otherwise<a name="line.101"></a>
+<FONT color="green">102</FONT>         */<a name="line.102"></a>
+<FONT color="green">103</FONT>        public boolean suspend(long taskId) {<a name="line.103"></a>
+<FONT color="green">104</FONT>            logger.debug("Suspending task, id: [" + taskId + "]");<a name="line.104"></a>
+<FONT color="green">105</FONT>            return awaitsSuspension.add(taskId);<a name="line.105"></a>
+<FONT color="green">106</FONT>        }<a name="line.106"></a>
+<FONT color="green">107</FONT>    <a name="line.107"></a>
+<FONT color="green">108</FONT>        /**<a name="line.108"></a>
+<FONT color="green">109</FONT>         * Throws {@link TaskSuspendedException} on successful suspension check<a name="line.109"></a>
+<FONT color="green">110</FONT>         *<a name="line.110"></a>
+<FONT color="green">111</FONT>         * @param taskId task id<a name="line.111"></a>
+<FONT color="green">112</FONT>         * @throws TaskSuspendedException if task was already suspended<a name="line.112"></a>
+<FONT color="green">113</FONT>         */<a name="line.113"></a>
+<FONT color="green">114</FONT>        public void checkSuspended(long taskId) {<a name="line.114"></a>
+<FONT color="green">115</FONT>            if(awaitsSuspension.remove(taskId)) throw new TaskSuspendedException(taskId);<a name="line.115"></a>
+<FONT color="green">116</FONT>        }<a name="line.116"></a>
+<FONT color="green">117</FONT>    <a name="line.117"></a>
+<FONT color="green">118</FONT>        // Runnable instead of Callable is deliberate<a name="line.118"></a>
+<FONT color="green">119</FONT>        private class StageRunnable implements Runnable {<a name="line.119"></a>
+<FONT color="green">120</FONT>            private final Task task;<a name="line.120"></a>
+<FONT color="green">121</FONT>    <a name="line.121"></a>
+<FONT color="green">122</FONT>            StageRunnable(Task task) {<a name="line.122"></a>
+<FONT color="green">123</FONT>                if(null == task.stageChain()) throw new TaskEngineException("Task, id: [" + task.getId() + "] returns null stageChain");<a name="line.123"></a>
+<FONT color="green">124</FONT>                this.task = task;<a name="line.124"></a>
+<FONT color="green">125</FONT>            }<a name="line.125"></a>
+<FONT color="green">126</FONT>    <a name="line.126"></a>
+<FONT color="green">127</FONT>            @Override<a name="line.127"></a>
+<FONT color="green">128</FONT>            public void run() {<a name="line.128"></a>
+<FONT color="green">129</FONT>                try {<a name="line.129"></a>
+<FONT color="green">130</FONT>                    runStages();<a name="line.130"></a>
+<FONT color="green">131</FONT>                } catch (Exception e) {<a name="line.131"></a>
+<FONT color="green">132</FONT>                    logger.error("System error running task, id: [" + task.getId() + "]", e);<a name="line.132"></a>
+<FONT color="green">133</FONT>                }<a name="line.133"></a>
+<FONT color="green">134</FONT>            }<a name="line.134"></a>
+<FONT color="green">135</FONT>    <a name="line.135"></a>
+<FONT color="green">136</FONT>            @SuppressWarnings("unchecked")<a name="line.136"></a>
+<FONT color="green">137</FONT>            private void runStages() {<a name="line.137"></a>
+<FONT color="green">138</FONT>                TaskStageChain chain = task.stageChain();<a name="line.138"></a>
+<FONT color="green">139</FONT>                TaskStageChain.Stage stage = chain.forName(task.getStageName());<a name="line.139"></a>
+<FONT color="green">140</FONT>                boolean success = true;<a name="line.140"></a>
+<FONT color="green">141</FONT>                while (chain.hasNext(stage)) {<a name="line.141"></a>
+<FONT color="green">142</FONT>                    if (whetherAwaitsSuspension()) {<a name="line.142"></a>
+<FONT color="green">143</FONT>                        success = false;<a name="line.143"></a>
+<FONT color="green">144</FONT>                        break;<a name="line.144"></a>
+<FONT color="green">145</FONT>                    }<a name="line.145"></a>
+<FONT color="green">146</FONT>                    stage = chain.next(stage);<a name="line.146"></a>
+<FONT color="green">147</FONT>                    success = processStage(stage);<a name="line.147"></a>
+<FONT color="green">148</FONT>                    if(!success) break;<a name="line.148"></a>
+<FONT color="green">149</FONT>                }<a name="line.149"></a>
+<FONT color="green">150</FONT>                if (success) {<a name="line.150"></a>
+<FONT color="green">151</FONT>                    boolean justSuspended = whetherAwaitsSuspension();<a name="line.151"></a>
+<FONT color="green">152</FONT>                    if (!justSuspended) {<a name="line.152"></a>
+<FONT color="green">153</FONT>                        manager.updateStatusSuccess(task.getId());<a name="line.153"></a>
+<FONT color="green">154</FONT>                    }<a name="line.154"></a>
+<FONT color="green">155</FONT>                }<a name="line.155"></a>
+<FONT color="green">156</FONT>            }<a name="line.156"></a>
+<FONT color="green">157</FONT>    <a name="line.157"></a>
+<FONT color="green">158</FONT>            private boolean processStage(TaskStageChain.Stage stage) {<a name="line.158"></a>
+<FONT color="green">159</FONT>                try {<a name="line.159"></a>
+<FONT color="green">160</FONT>                    logger.debug("Starting stage: [" + stage.getIntermediate() + "] for task, id: [" + task.getId() + "]");<a name="line.160"></a>
+<FONT color="green">161</FONT>                    TaskStageProcessor processor = provider.provide(stage.getProcessorId());<a name="line.161"></a>
+<FONT color="green">162</FONT>                    if (null == processor) throw new TaskEngineException("Null processor returned for id: [" + stage.getProcessorId() + "]");<a name="line.162"></a>
+<FONT color="green">163</FONT>                    manager.updateStage(task.getId(), stage.getIntermediate());<a name="line.163"></a>
+<FONT color="green">164</FONT>                    fireBeforeListeners(processor);<a name="line.164"></a>
+<FONT color="green">165</FONT>                    processor.process(task.getId());<a name="line.165"></a>
+<FONT color="green">166</FONT>                    fireAfterListeners(processor);<a name="line.166"></a>
+<FONT color="green">167</FONT>                    logger.debug("Stage: [" + stage.getCompleted() + "] completed for task, id: [" + task.getId() + "]");<a name="line.167"></a>
+<FONT color="green">168</FONT>                    manager.updateStage(task.getId(), stage.getCompleted());<a name="line.168"></a>
+<FONT color="green">169</FONT>                    return true;<a name="line.169"></a>
+<FONT color="green">170</FONT>                } catch (TaskSuspendedException e) {<a name="line.170"></a>
+<FONT color="green">171</FONT>                    logger.info("Task, id: [" + task.getId() + "] was suspended on stage: [" + stage.getIntermediate() + "]");<a name="line.171"></a>
+<FONT color="green">172</FONT>                    manager.updateStatusSuspended(task.getId());<a name="line.172"></a>
+<FONT color="green">173</FONT>                    manager.updateStage(task.getId(), task.stageChain().previous(stage).getCompleted());<a name="line.173"></a>
+<FONT color="green">174</FONT>                    return false;<a name="line.174"></a>
+<FONT color="green">175</FONT>                } catch (Exception e) {<a name="line.175"></a>
+<FONT color="green">176</FONT>                    logger.error("Task, id: [" + task.getId() + "] caused error on stage: [" + stage.getIntermediate() + "]", e);<a name="line.176"></a>
+<FONT color="green">177</FONT>                    manager.updateStatusError(task.getId(), e, task.stageChain().previous(stage).getCompleted());<a name="line.177"></a>
+<FONT color="green">178</FONT>                    return false;<a name="line.178"></a>
+<FONT color="green">179</FONT>                }<a name="line.179"></a>
+<FONT color="green">180</FONT>            }<a name="line.180"></a>
+<FONT color="green">181</FONT>    <a name="line.181"></a>
+<FONT color="green">182</FONT>            private void fireBeforeListeners(TaskStageProcessor processor) {<a name="line.182"></a>
+<FONT color="green">183</FONT>                if(processor instanceof TaskStageListenableProcessor) {<a name="line.183"></a>
+<FONT color="green">184</FONT>                    TaskStageListenableProcessor listen = (TaskStageListenableProcessor) processor;<a name="line.184"></a>
+<FONT color="green">185</FONT>                    for(TaskStageListener li : listen.beforeStartListeners()) {<a name="line.185"></a>
+<FONT color="green">186</FONT>                        li.fire(task.getId());<a name="line.186"></a>
+<FONT color="green">187</FONT>                    }<a name="line.187"></a>
+<FONT color="green">188</FONT>                }<a name="line.188"></a>
+<FONT color="green">189</FONT>            }<a name="line.189"></a>
+<FONT color="green">190</FONT>    <a name="line.190"></a>
+<FONT color="green">191</FONT>            private void fireAfterListeners(TaskStageProcessor processor) {<a name="line.191"></a>
+<FONT color="green">192</FONT>                if(processor instanceof TaskStageListenableProcessor) {<a name="line.192"></a>
+<FONT color="green">193</FONT>                    TaskStageListenableProcessor listen = (TaskStageListenableProcessor) processor;<a name="line.193"></a>
+<FONT color="green">194</FONT>                    for(TaskStageListener li : listen.afterFinishListeners()) {<a name="line.194"></a>
+<FONT color="green">195</FONT>                        li.fire(task.getId());<a name="line.195"></a>
+<FONT color="green">196</FONT>                    }<a name="line.196"></a>
+<FONT color="green">197</FONT>                }<a name="line.197"></a>
 <FONT color="green">198</FONT>            }<a name="line.198"></a>
-<FONT color="green">199</FONT>        }<a name="line.199"></a>
-<FONT color="green">200</FONT>    }<a name="line.200"></a>
+<FONT color="green">199</FONT>    <a name="line.199"></a>
+<FONT color="green">200</FONT>            private boolean whetherAwaitsSuspension() {<a name="line.200"></a>
+<FONT color="green">201</FONT>                if (!awaitsSuspension.remove(task.getId())) return false;<a name="line.201"></a>
+<FONT color="green">202</FONT>                logger.info("Task, id: [" + task.getId() + "] was suspended, terminating execution");<a name="line.202"></a>
+<FONT color="green">203</FONT>                manager.updateStatusSuspended(task.getId());<a name="line.203"></a>
+<FONT color="green">204</FONT>                return true;<a name="line.204"></a>
+<FONT color="green">205</FONT>            }<a name="line.205"></a>
+<FONT color="green">206</FONT>        }<a name="line.206"></a>
+<FONT color="green">207</FONT>    }<a name="line.207"></a>
 
 
 

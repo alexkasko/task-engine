@@ -14,8 +14,13 @@
 <FONT color="green">011</FONT>     * @see TaskEngine<a name="line.11"></a>
 <FONT color="green">012</FONT>     */<a name="line.12"></a>
 <FONT color="green">013</FONT>    public interface TaskStageListener {<a name="line.13"></a>
-<FONT color="green">014</FONT>        void fire(long taskId);<a name="line.14"></a>
-<FONT color="green">015</FONT>    }<a name="line.15"></a>
+<FONT color="green">014</FONT>        /**<a name="line.14"></a>
+<FONT color="green">015</FONT>         * Will be called by {@link TaskEngine} before/after stage processing<a name="line.15"></a>
+<FONT color="green">016</FONT>         *<a name="line.16"></a>
+<FONT color="green">017</FONT>         * @param taskId task ID<a name="line.17"></a>
+<FONT color="green">018</FONT>         */<a name="line.18"></a>
+<FONT color="green">019</FONT>        void fire(long taskId);<a name="line.19"></a>
+<FONT color="green">020</FONT>    }<a name="line.20"></a>
 
 
 
