@@ -11,6 +11,11 @@ package com.alexkasko.tasks;
 public class TaskSuspendedException extends RuntimeException {
     private static final long serialVersionUID = 3388511296426912332L;
 
+    /**
+     * Constructor
+     *
+     * @param taskId task ID
+     */
     public TaskSuspendedException(long taskId) {
         super(Long.toString(taskId));
     }

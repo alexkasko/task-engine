@@ -60,7 +60,7 @@ public class TaskManagerHibernateImpl implements TaskManagerIface {
 
     @Override
     @Transactional
-    public void updateStatusDefault(long taskId) {
+    public void updateStatusSuccess(long taskId) {
         TaskImpl task = (TaskImpl) cs().get(TaskImpl.class, taskId);
         if(!Status.PROCESSING.equals(task.getStatus())) throw new IllegalStateException(
                         "updateStage method must be called only on 'processing tasks'");

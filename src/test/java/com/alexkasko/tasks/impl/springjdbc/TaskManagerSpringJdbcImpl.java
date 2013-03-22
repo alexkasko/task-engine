@@ -64,7 +64,7 @@ public class TaskManagerSpringJdbcImpl implements TaskManagerIface {
 
     @Override
     @Transactional
-    public void updateStatusDefault(long taskId) {
+    public void updateStatusSuccess(long taskId) {
         int res = jt.update("update tasks set status=:status where status=:processing and id=:taskId", ImmutableMap.of(
                 "status", Status.NORMAL.name(),
                 "processing", Status.PROCESSING.name(),

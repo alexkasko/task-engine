@@ -38,14 +38,18 @@ public class TaskEngine implements Runnable {
     private final Object fireLock = new Object();
 
     /**
+     * Constructor
+     *
      * @param executor executor will be used to process separate stages
      * @param manager tasks DAO for all task state operations
      * @param provider stage processors provider
+     * @throws TaskEngineException on invalid input
      */
-    public TaskEngine(Executor executor, TaskManager<? extends Task> manager, TaskProcessorProvider provider) {
-        if(null == executor) throw new IllegalArgumentException("Provided executor is null");
-        if(null == manager) throw new IllegalArgumentException("Provided manager is null");
-        if(null == provider) throw new IllegalArgumentException("Input provider is null");
+    public TaskEngine(Executor executor, TaskManager<? extends Task> manager, TaskProcessorProvider provider)
+            throws TaskEngineException {
+        if(null == executor) throw new TaskEngineException("Provided executor is null");
+        if(null == manager) throw new TaskEngineException("Provided manager is null");
+        if(null == provider) throw new TaskEngineException("Input provider is null");
         this.executor = executor;
         this.manager = manager;
         this.provider = provider;
@@ -56,8 +60,9 @@ public class TaskEngine implements Runnable {
      * to execution
      *
      * @return count of tasks sent for processing
+     * @throws TaskEngineException on invalid results of {@link com.alexkasko.tasks.TaskManager#markProcessingAndLoad()}
      */
-    public int fire() {
+    public int fire() throws TaskEngineException {
         synchronized (fireLock) {
             Collection<? extends Task> tasksToFire = manager.markProcessingAndLoad();
             if(0 == tasksToFire.size()) {
@@ -67,23 +72,25 @@ public class TaskEngine implements Runnable {
             // fire tasks
             int counter = 0;
             for(Task task : tasksToFire) {
-                if(null == task) throw new IllegalArgumentException("Provided task is null, task list to fire: '" + tasksToFire + "'");
+                if(null == task) throw new TaskEngineException("Provided task is null, task list to fire: [" + tasksToFire + "]");
                 awaitsSuspension.remove(task.getId()); // should be suspended during execution, not BEFORE it
-                logger.debug("Firing task: '" + task + "'");
+                logger.debug("Firing task: [" + task + "]");
                 Runnable runnable = new StageRunnable(task);
                 executor.execute(runnable);
                 counter += 1;
             }
-            if(counter > 0 ) logger.info(counter + " tasks fired");
+            if(counter > 0 ) logger.debug(counter + " tasks fired");
             return counter;
         }
     }
 
     /**
      * Scheduler friendly fire wrapper
+     *
+     * @throws TaskEngineException on invalid results of {@link com.alexkasko.tasks.TaskManager#markProcessingAndLoad()}
      */
     @Override
-    public void run() {
+    public void run() throws TaskEngineException {
         fire();
     }
 
@@ -94,7 +101,7 @@ public class TaskEngine implements Runnable {
      * @return {@code false} if task was already suspended, {@code true} otherwise
      */
     public boolean suspend(long taskId) {
-        logger.debug("Suspending task, id: '" + taskId + "'");
+        logger.debug("Suspending task, id: [" + taskId + "]");
         return awaitsSuspension.add(taskId);
     }
 
@@ -113,7 +120,7 @@ public class TaskEngine implements Runnable {
         private final Task task;
 
         StageRunnable(Task task) {
-            if(null == task.stageChain()) throw new IllegalArgumentException("Task, id: '" + task.getId() + "' returns null stageChain");
+            if(null == task.stageChain()) throw new TaskEngineException("Task, id: [" + task.getId() + "] returns null stageChain");
             this.task = task;
         }
 
@@ -122,7 +129,7 @@ public class TaskEngine implements Runnable {
             try {
                 runStages();
             } catch (Exception e) {
-                logger.error("System error running task, id: '" + task.getId() + "'", e);
+                logger.error("System error running task, id: [" + task.getId() + "]", e);
             }
         }
 
@@ -143,30 +150,30 @@ public class TaskEngine implements Runnable {
             if (success) {
                 boolean justSuspended = whetherAwaitsSuspension();
                 if (!justSuspended) {
-                    manager.updateStatusDefault(task.getId());
+                    manager.updateStatusSuccess(task.getId());
                 }
             }
         }
 
         private boolean processStage(TaskStageChain.Stage stage) {
             try {
-                logger.debug("Starting stage: '" + stage.getIntermediate() + "' for task, id: '" + task.getId() + "'");
+                logger.debug("Starting stage: [" + stage.getIntermediate() + "] for task, id: [" + task.getId() + "]");
                 TaskStageProcessor processor = provider.provide(stage.getProcessorId());
-                if (null == processor) throw new IllegalArgumentException("Null processor returned for id: '" + stage.getProcessorId() + "'");
+                if (null == processor) throw new TaskEngineException("Null processor returned for id: [" + stage.getProcessorId() + "]");
                 manager.updateStage(task.getId(), stage.getIntermediate());
                 fireBeforeListeners(processor);
                 processor.process(task.getId());
                 fireAfterListeners(processor);
-                logger.debug("Stage: '" + stage.getCompleted() + "' completed for task, id: '" + task.getId() + "'");
+                logger.debug("Stage: [" + stage.getCompleted() + "] completed for task, id: [" + task.getId() + "]");
                 manager.updateStage(task.getId(), stage.getCompleted());
                 return true;
             } catch (TaskSuspendedException e) {
-                logger.info("Task, id: '" + task.getId() + "' was suspended on stage: '" + stage.getIntermediate() + "'");
+                logger.info("Task, id: [" + task.getId() + "] was suspended on stage: [" + stage.getIntermediate() + "]");
                 manager.updateStatusSuspended(task.getId());
                 manager.updateStage(task.getId(), task.stageChain().previous(stage).getCompleted());
                 return false;
             } catch (Exception e) {
-                logger.error("Task, id: '" + task.getId() + "' caused error on stage: '" + stage.getIntermediate() + "'", e);
+                logger.error("Task, id: [" + task.getId() + "] caused error on stage: [" + stage.getIntermediate() + "]", e);
                 manager.updateStatusError(task.getId(), e, task.stageChain().previous(stage).getCompleted());
                 return false;
             }
@@ -192,7 +199,7 @@ public class TaskEngine implements Runnable {
 
         private boolean whetherAwaitsSuspension() {
             if (!awaitsSuspension.remove(task.getId())) return false;
-            logger.info("Task, id: '" + task.getId() + "' was suspended, terminating execution");
+            logger.info("Task, id: [" + task.getId() + "] was suspended, terminating execution");
             manager.updateStatusSuspended(task.getId());
             return true;
         }

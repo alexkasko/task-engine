@@ -11,5 +11,10 @@ package com.alexkasko.tasks;
  * @see TaskEngine
  */
 public interface TaskStageListener {
+    /**
+     * Will be called by {@link TaskEngine} before/after stage processing
+     *
+     * @param taskId task ID
+     */
     void fire(long taskId);
 }

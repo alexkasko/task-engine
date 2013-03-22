@@ -1,7 +1,7 @@
 Engine for asynchronous multistage suspendable tasks
 ====================================================
 
-Library imlements background tasks engine with support for tasks suspending.
+Library implements background tasks engine with support for tasks suspending.
 
 Library depends on [commons-logging](http://commons.apache.org/logging/).
 
@@ -53,7 +53,7 @@ Task lifetime looks like this in (stage, status) pairs:
 -(later resumed by user)-> `DATA_LOADED, RESUMED` -(starting second stage)-> `BUILDING_REPORT, IN_PROCESSING`
 -(finished successfully)-> `FINISHED. NORMAL`
 
-On all processing stages task may be switched to `ERROR` and
+On all processing stages task may be switched to `ERROR`.
 
 Library usage
 -------------
@@ -63,7 +63,7 @@ Maven dependency (available in central repository):
     <dependency>
         <groupId>com.alexkasko.tasks</groupId>
         <artifactId>task-engine</artifactId>
-        <version>1.1</version>
+        <version>1.2</version>
     </dependency>
 
 `TaskEngine` implements tasks running, suspending and resuming with proper stage and status updating. `TaskEngine`
@@ -116,7 +116,7 @@ Task suspension call must cause next aftermath:
  * task stage update to previous "static" stage
  * current task stage processing, running in executor, must be rolled back
 
-For first two points `TaskEngine` makes direct calls to `TaskManager`. To implement actual task intteruption
+For first two points `TaskEngine` makes direct calls to `TaskManager`. To implement actual task interruption
 engine holds set of suspended task ids and provides `checkSuspended` method that should be called periodically
 by `TaskStageProcessor` implementation. If task is suspended, `TaskEngine` removes it from set and throws `TaskSuspendedException`
 that should rollback current stage execution.
@@ -152,6 +152,23 @@ Example of proper implementation assuming READ_COMMITTED transaction isolation l
 If task stage processor implements `TaskStageListenableProcessor` interface, it can have `TaskStageListener`s
 attached, that will be fired by `TaskEngine` before or after task stage execution.
 
+####tasks cleanup on startup
+
+Task engine expects, that before the application shutdown all tasks will be cleanly suspended. But in real applications
+it's possible that application will be shut down and some tasks remain running in database. It's applications
+responsibility to clean such tasks on startup moving them to `ERROR` status or switching to previous stage. Engine
+tries to help in switching to previous completed stage with method [TaskChain.lastCompletedStage](http://alexkasko.github.com/task-engine/javadocs/com/alexkasko/tasks/TaskStageChain.html#lastCompletedStage%28java.lang.String%29).
+Using [Guava functions](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/base/Function.html),
+[springjdbc-typed-queries](https://github.com/alexkasko/springjdbc-typed-queries) and [springjdbc-iterable](https://github.com/alexkasko/springjdbc-iterable)
+startup cleanup procedure may be done like this:
+
+    // load tasks in 'RUNNING' status
+    ClosableIterator<MyTask>  running = qrs.selectRunningTasksIter(taskMapper);
+    // transform tasks into parameters for 'update' query
+    Iterator<TaskIdAndStage> completedStages = Iterators.transform(running, functionThatCallsLastCompetedStageName);
+    // perform batch update
+    qrs.updateTasksStagesBatch(completedStages, 42);
+
 License information
 -------------------
 
@@ -159,6 +176,12 @@ This project is released under the [Apache License 2.0](http://www.apache.org/li
 
 Changelog
 ---------
+
+**1.2** (2013-03-22)
+
+ * cleanup on startup support ([issue1](https://github.com/alexkasko/task-engine/issues/1).)
+ * proper inheritance (and customization) support for stage chains
+ * `updateStatusDefault` method renamed to `updateStatusSuccess`
 
 **1.1** (2013-01-28)
 

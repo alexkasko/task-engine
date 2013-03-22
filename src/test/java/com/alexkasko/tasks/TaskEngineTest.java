@@ -155,7 +155,7 @@ public class TaskEngineTest {
         }
 
         @Override
-        public void updateStatusDefault(long taskId) {
+        public void updateStatusSuccess(long taskId) {
             tasks.get(taskId).changeStatus("default");
             events.add("TaskDAO.task." + taskId + ".status.default");
         }

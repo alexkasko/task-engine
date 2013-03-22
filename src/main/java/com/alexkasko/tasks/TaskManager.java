@@ -31,12 +31,12 @@ public interface TaskManager<T extends Task> {
     void updateStage(long taskId, String stage);
 
     /**
-     * Changes task status to default, will be called after successful processing of last stage
+     * Changes task status to 'success', will be called after successful processing of last stage
      * from stage-executor's thread only for tasks being in 'processing' status.
      *
      * @param taskId task id
      */
-    void updateStatusDefault(long taskId);
+    void updateStatusSuccess(long taskId);
 
     /**
      * Changes task status to from 'processing' to 'suspended', will be called on task suspension

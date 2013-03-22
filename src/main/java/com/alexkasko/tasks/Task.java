@@ -21,11 +21,15 @@ public interface Task {
     TaskStageChain stageChain();
 
     /**
-     * @return  task instance unique id
+     * Returns task instance unique id
+     *
+     * @return task instance unique id
      */
     long getId();
 
     /**
+     * Current stage for this task
+     *
      * @return current stage for this task
      */
     String getStageName();
